@@ -34,8 +34,10 @@
 <style>
   :root { --paper:#F7F3EB; --ink:#26302B; --forest:#2E5941; --forest-d:#24463A; --terra:#D96C47; --saff:#E5A33D; }
   * { -webkit-tap-highlight-color: transparent; }
-  html,body { background:var(--paper); }
-  body { font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--ink); overscroll-behavior-y:none; }
+  html,body { background:var(--paper); overflow-x:hidden; max-width:100%; }
+  body { font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--ink); overscroll-behavior-y:none; width:100%; }
+  #root { overflow-x:hidden; }
+  .safetop { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
   .display { font-family:'Newsreader',Georgia,serif; letter-spacing:-0.01em; }
   .glass { background:rgba(255,255,255,.9); backdrop-filter:blur(14px); }
   .card { background:#fff; border-radius:1.5rem; box-shadow:0 1px 2px rgba(38,48,43,.05), 0 10px 30px -14px rgba(38,48,43,.16); }
@@ -2532,7 +2534,7 @@ function App(){
       <div className="absolute inset-0 pointer-events-none opacity-[0.08]" style={{backgroundImage:"radial-gradient(circle at 1px 1px, #fff 1.2px, transparent 1.3px)",backgroundSize:"22px 22px"}}/>
       <div className="absolute -top-12 -right-8 w-52 h-52 rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(229,163,61,.35), transparent 65%)"}}/>
       <div className="absolute -bottom-16 -left-10 w-44 h-44 rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(217,108,71,.25), transparent 65%)"}}/>
-      <div className="px-5 pt-6 pb-5 relative">
+      <div className="px-5 pb-5 relative safetop">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-white/12 flex items-center justify-center" style={{backgroundColor:"rgba(255,255,255,.14)"}}><I n="pranzo" s={24} w={1.6}/></div>
           <div className="flex-1">
