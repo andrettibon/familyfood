@@ -10,14 +10,14 @@
 <meta name="apple-mobile-web-app-title" content="FamilyFood" />
 <title>FamilyFood — la settimana a tavola, su misura</title>
 <script>
-  /* PWA: manifest + icona (segnaposto vettoriale, verrà sostituita dall'icona definitiva) */
+  /* PWA: manifest + icona FamilyFood (piatto-faccina, vettoriale) */
   (function(){
-    var svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#3A6B4F'/><stop offset='1' stop-color='#24463A'/></linearGradient></defs><rect width='512' height='512' rx='114' fill='url(#g)'/><circle cx='256' cy='260' r='150' fill='none' stroke='#F7F3EB' stroke-width='22'/><circle cx='256' cy='260' r='104' fill='none' stroke='#F7F3EB' stroke-width='11' opacity='.5'/><circle cx='230' cy='250' r='21' fill='#E5A33D'/><circle cx='282' cy='240' r='17' fill='#D96C47'/><circle cx='262' cy='288' r='19' fill='#8FBF9E'/></svg>";
+    var svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='27' fill='#2E5941'/><path d='M57 25 q-11 -7 -6 -19 q12 5 6 19Z' fill='#7FB08E'/><path d='M60 26 q9 -5 6 -15 q-11 3 -6 15Z' fill='#6AA37C'/><circle cx='60' cy='61' r='36' fill='#F7F3EB'/><circle cx='60' cy='61' r='25' fill='none' stroke='#2E5941' stroke-opacity='0.13' stroke-width='2'/><circle cx='49' cy='56' r='8.5' fill='#E5A33D'/><circle cx='71' cy='52' r='6.5' fill='#D96C47'/><path d='M45 66 Q60 84 75 63 Q61 74 45 66 Z' fill='#4F8C67'/></svg>";
     var icon="data:image/svg+xml;utf8,"+encodeURIComponent(svg);
     var at=document.createElement("link"); at.rel="apple-touch-icon"; at.href=icon; document.head.appendChild(at);
     var fav=document.createElement("link"); fav.rel="icon"; fav.type="image/svg+xml"; fav.href=icon; document.head.appendChild(fav);
     try{
-      var mf={name:"FamilyFood",short_name:"FamilyFood",start_url:".",scope:".",display:"standalone",orientation:"portrait",background_color:"#F7F3EB",theme_color:"#2E5941",icons:[{src:icon,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+      var mf={name:"FamilyFood",short_name:"FamilyFood",start_url:".",scope:".",display:"standalone",orientation:"portrait",background_color:"#F7F3EB",theme_color:"#2E5941",icons:[{src:icon,sizes:"any",type:"image/svg+xml",purpose:"any"}]};
       var blob=new Blob([JSON.stringify(mf)],{type:"application/manifest+json"});
       var ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml);
     }catch(e){}
