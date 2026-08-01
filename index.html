@@ -1146,8 +1146,8 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
       {!mostraImport&&<button onClick={()=>setMostraImport(true)} className="text-[11px] font-bold text-stone-400 hover:text-[#2E5941] flex items-center gap-1"><I n="link" s={12}/>Importa da un link</button>}
     </div>
     {mostraImport&&<div className="no-print mb-3"><ImportRicetta onSalva={r=>{setRicetteUser([...ricetteUser,r]);setMostraImport(false);}}/><button onClick={()=>setMostraImport(false)} className="text-[10px] font-bold text-stone-300 hover:text-stone-500 mt-1">chiudi</button></div>}
-    <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
-      {["Tutte","Colazione","Pranzo","Cena","Snack"].map(f=><Chip key={f} on={filtro===f} onClick={()=>setFiltro(f)}>{f}</Chip>)}
+    <div className="flex gap-1.5 mb-2 no-print flex-nowrap items-center overflow-x-auto" style={{scrollbarWidth:"none"}}>
+      {["Tutte","Colazione","Pranzo","Cena","Snack"].map(f=><button key={f} onClick={()=>setFiltro(f)} className={"shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition "+(filtro===f?"bg-[#2E5941] border-[#2E5941] text-white shadow-sm":"bg-white border-stone-200 text-stone-500 hover:border-stone-300")}>{f}</button>)}
     </div>
     <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
       {["Tutte","Vegetariane","Vegane"].map(v=><button key={v} onClick={()=>setVegF(v)} className={"px-3.5 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 "+(vegF===v?"bg-green-600 border-green-600 text-white shadow-sm":"bg-white border-green-300 text-green-700 hover:border-green-500")}>{v!=="Tutte"&&<I n="foglia" s={12}/>}{v}</button>)}
@@ -2011,7 +2011,7 @@ function App(){
       {step==="piano"&&<StepPiano persone={persone} likes={likes} planner={planner} setPlanner={setPlanner} varianti={varianti} setVarianti={setVarianti} dispensa={dispensa} avanti={()=>setStep("spesa")}/>}
       {step==="spesa"&&<StepSpesa items={items} dispensa={dispensa} setDispensa={setDispensa} checked={checked} setChecked={setChecked} avanti={()=>setStep("negozi")} nuovaSettimana={nuovaSettimana}/>}
       {step==="negozi"&&<StepNegozi items={items}/>}
-      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v4-DB · {RICETTE.length} ricette</div>
+      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v6-DB · {RICETTE.length} ricette</div>
     </main>
 
     {/* NAV FLOTTANTE */}
@@ -2042,11 +2042,12 @@ async function supaGet(path){
   return res.json();
 }
 function iconDaTipo(t){ return t==="Snack"?"spuntino":({Colazione:"colazione",Pranzo:"pranzo",Cena:"cena"}[t]||"pranzo"); }
-function costruisciRicetta(row,gi,gp,gt){
-  const list=(gi[row.id]||[]).slice().sort((a,b)=>a.ordine-b.ordine).map(x=>[x.nome,Number(x.qta),x.unita]);
-  const r=R(row.id,row.nome,row.tipo,iconDaTipo(row.tipo),row.tempo,list,row.recupero,row.cucina);
-  r.proc=(gp[row.id]||[]).slice().sort((a,b)=>a.ordine-b.ordine).map(x=>x.testo);
-  r.tags=gt[row.id]||[]; r.paese=row.paese||null; if(row.img_url)r.img=row.img_url; r.db=true;
+function costruisciRicetta(row){
+  const ings=(row.ricetta_ingredienti||[]).slice().sort((a,b)=>(a.ordine||0)-(b.ordine||0)).map(x=>[x.nome,Number(x.qta),x.unita]);
+  const r=R(row.id,row.nome,row.tipo,iconDaTipo(row.tipo),row.tempo,ings,row.recupero,row.cucina);
+  r.proc=(row.ricetta_passi||[]).slice().sort((a,b)=>(a.ordine||0)-(b.ordine||0)).map(x=>x.testo);
+  r.tags=(row.ricetta_tag||[]).map(x=>x.tag);
+  r.paese=row.paese||null; if(row.img_url)r.img=row.img_url; r.db=true;
   return r;
 }
 function applicaCatalogo(list){
@@ -2061,31 +2062,23 @@ function applicaCatalogo(list){
 async function caricaCatalogoDB(){
   var _newI={"Brodo vegetale":["Dispensa",0.9,1000,"ml",4],"Patata dolce":["Frutta e Verdura",2.5,1000,"g",86],"Salsa teriyaki":["Dispensa",3.5,250,"ml",130],"Salsa sriracha":["Dispensa",3.0,200,"ml",90],"Burro di arachidi":["Dispensa",4.0,350,"g",590],"Zenzero":["Frutta e Verdura",6.0,100,"g",80]};
   Object.keys(_newI).forEach(function(k){ if(!ING[k])ING[k]=_newI[k].slice(0,4); if(KCAL[k]==null)KCAL[k]=_newI[k][4]; });
-  const [ric,ings,passi,tags]=await Promise.all([
-    supaGet("ricette?select=*&limit=5000"),
-    supaGet("ricetta_ingredienti?select=*&limit=50000"),
-    supaGet("ricetta_passi?select=*&limit=50000"),
-    supaGet("ricetta_tag?select=*&limit=50000")
-  ]);
-  const gi={},gp={},gt={};
-  ings.forEach(x=>{(gi[x.ricetta_id]=gi[x.ricetta_id]||[]).push(x);});
-  passi.forEach(x=>{(gp[x.ricetta_id]=gp[x.ricetta_id]||[]).push(x);});
-  tags.forEach(x=>{(gt[x.ricetta_id]=gt[x.ricetta_id]||[]).push(x.tag);});
-  const built=ric.map(function(row){return costruisciRicetta(row,gi,gp,gt);});
+  const ric=await supaGet("ricette?select=id,nome,tipo,cucina,paese,tempo,recupero,img_url,ricetta_ingredienti(nome,qta,unita,ordine),ricetta_passi(ordine,testo),ricetta_tag(tag)&limit=5000");
+  const built=ric.map(function(row){return costruisciRicetta(row);});
   const n=applicaCatalogo(built);
-  try{ localStorage.setItem("ff_catalogo", JSON.stringify(built)); }catch(e){}
+  try{ localStorage.setItem("ff_catalogo2", JSON.stringify(built)); }catch(e){}
   return n;
 }
 function catalogoDaCache(){
-  try{ return applicaCatalogo(JSON.parse(localStorage.getItem("ff_catalogo")||"[]")); }catch(e){ return 0; }
+  try{ return applicaCatalogo(JSON.parse(localStorage.getItem("ff_catalogo2")||"[]")); }catch(e){ return 0; }
 }
-let __booted=false;
-function boot(){ if(__booted)return; __booted=true; if(RICETTE_BASE.length===0)catalogoDaCache(); ReactDOM.createRoot(document.getElementById("root")).render(<App/>); }
+var __root=null, __shown=-1;
+function render(){ if(!__root)__root=ReactDOM.createRoot(document.getElementById("root")); __shown=RICETTE_BASE.length; __root.render(<App key={"c"+__shown}/>); }
+function boot(){ if(RICETTE_BASE.length===0)catalogoDaCache(); render(); }
 const __bootTimer=setTimeout(boot,6000);
 caricaCatalogoDB()
   .then(function(n){ try{console.log("[FamilyFood] "+n+" ricette dal database");}catch(e){} })
   .catch(function(e){ try{console.warn("[FamilyFood] DB non raggiungibile, uso cache locale",e);}catch(_){} })
-  .finally(function(){ clearTimeout(__bootTimer); boot(); });
+  .finally(function(){ clearTimeout(__bootTimer); if(__root===null){ boot(); } else if(RICETTE_BASE.length!==__shown){ render(); } });
 </script>
 </body>
 </html>
