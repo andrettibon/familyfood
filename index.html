@@ -2601,7 +2601,51 @@ function App(){
   </div>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+/* ================= SUPABASE — catalogo ricette dal database ================= */
+const SUPA_URL="https://mrdgetcxlgzdaduyvtvl.supabase.co";
+const SUPA_KEY="sb_publishable_qZAI-RSFuyYs4TzU94rT1Q_u1cEHYVv";
+window.FF_SUPA={url:SUPA_URL,key:SUPA_KEY};
+async function supaGet(path){
+  const res=await fetch(SUPA_URL+"/rest/v1/"+path,{headers:{apikey:SUPA_KEY,Authorization:"Bearer "+SUPA_KEY}});
+  if(!res.ok) throw new Error("supabase "+res.status);
+  return res.json();
+}
+function iconDaTipo(t){ return t==="Snack"?"spuntino":({Colazione:"colazione",Pranzo:"pranzo",Cena:"cena"}[t]||"pranzo"); }
+async function caricaCatalogoDB(){
+  ING["Brodo vegetale"]=ING["Brodo vegetale"]||["Dispensa",0.9,1000,"ml"];
+  KCAL["Brodo vegetale"]=KCAL["Brodo vegetale"]||4;
+  const [ric,ings,passi,tags]=await Promise.all([
+    supaGet("ricette?select=*&limit=5000"),
+    supaGet("ricetta_ingredienti?select=*&limit=50000"),
+    supaGet("ricetta_passi?select=*&limit=50000"),
+    supaGet("ricetta_tag?select=*&limit=50000")
+  ]);
+  const gi={},gp={},gt={};
+  ings.forEach(x=>{(gi[x.ricetta_id]=gi[x.ricetta_id]||[]).push(x);});
+  passi.forEach(x=>{(gp[x.ricetta_id]=gp[x.ricetta_id]||[]).push(x);});
+  tags.forEach(x=>{(gt[x.ricetta_id]=gt[x.ricetta_id]||[]).push(x.tag);});
+  let add=0;
+  ric.forEach(row=>{
+    const dup=RICETTE_BASE.some(x=>x.id===row.id||(x.nome||"").toLowerCase()===(row.nome||"").toLowerCase());
+    if(dup)return;
+    const list=(gi[row.id]||[]).slice().sort((a,b)=>a.ordine-b.ordine).map(x=>[x.nome,Number(x.qta),x.unita]);
+    const r=R(row.id,row.nome,row.tipo,iconDaTipo(row.tipo),row.tempo,list,row.recupero,row.cucina);
+    r.proc=(gp[row.id]||[]).slice().sort((a,b)=>a.ordine-b.ordine).map(x=>x.testo);
+    r.tags=gt[row.id]||[];
+    r.paese=row.paese||null;
+    if(row.img_url)r.img=row.img_url;
+    r.db=true;
+    RICETTE_BASE.push(r); add++;
+  });
+  return add;
+}
+let __booted=false;
+function boot(){ if(__booted)return; __booted=true; ReactDOM.createRoot(document.getElementById("root")).render(<App/>); }
+const __bootTimer=setTimeout(boot,4500);
+caricaCatalogoDB()
+  .then(function(n){ try{console.log("[FamilyFood] +"+n+" ricette dal database");}catch(e){} })
+  .catch(function(e){ try{console.warn("[FamilyFood] DB non raggiungibile, catalogo locale",e);}catch(_){} })
+  .finally(function(){ clearTimeout(__bootTimer); boot(); });
 </script>
 </body>
 </html>
