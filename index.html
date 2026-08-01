@@ -195,7 +195,7 @@ const CAT_STYLE = {
 };
 
 const ALLERGIE = ["Glutine","Lattosio","Uova","Pesce","Frutta a guscio"];
-const DIETE = ["Onnivoro","Vegetariano"];
+const DIETE = ["Onnivoro","Vegetariano","Vegano"];
 const APPETITO = { "Poco":0.75, "Normale":1, "Buono":1.25 };
 const COLORI = [
   "from-emerald-500 to-teal-600","from-orange-400 to-rose-500","from-sky-500 to-blue-600",
@@ -551,6 +551,7 @@ function allergeniAuto(nome){
 function nonVegAuto(nome){ return haKw(nome,KW.carne)||haKw(nome,KW.pesce); }
 function allergeniRicetta(r){ const s=new Set(); r.ingredienti.forEach(i=>((ALLG[i.nome]||allergeniAuto(i.nome))).forEach(a=>s.add(a))); return [...s]; }
 function isVeg(r){ return !r.ingredienti.some(i=>NON_VEG.includes(i.nome)||nonVegAuto(i.nome)); }
+function isVegan(r){ return !r.ingredienti.some(function(i){ var cat=(ING[i.nome]||["Dispensa"])[0]; return NON_VEG.includes(i.nome)||nonVegAuto(i.nome)||cat==="Carne e Pesce"||cat==="Latticini e Uova"||i.nome==="Miele"; }); }
 const SINONIMI={
   "legumi":["legumi","ceci","fagioli","lenticchie","piselli"],
   "pesce":["pesce","salmone","tonno","merluzzo","orata","branzino","vongole","gamber","alici","acciug"],
@@ -708,6 +709,7 @@ function conflitti(r,presenti){
   presenti.forEach(p=>{
     (p.allergie||[]).forEach(a=>{ if(alg.includes(a)) out.push({persona:p.nome,motivo:a,tipo:"allergia"}); });
     if(p.dieta==="Vegetariano"&&!isVeg(r)) out.push({persona:p.nome,motivo:"vegetariano",tipo:"dieta"});
+    if(p.dieta==="Vegano"&&!isVegan(r)) out.push({persona:p.nome,motivo:"vegano",tipo:"dieta"});
     (p.nonGraditi||[]).forEach(t=>{ if(matchGusto(t,r)) out.push({persona:p.nome,motivo:"non ama "+t.toLowerCase(),tipo:"gusto"}); });
   });
   return out;
@@ -922,38 +924,14 @@ function StepFamiglia({persone,setPersone,avanti}){
         </div>
         <div>
           <div className="text-[11px] font-extrabold text-stone-400 uppercase tracking-wide mb-1.5">Dieta</div>
-          <div className="flex gap-2">{DIETE.map(v=><Chip key={v} on={edit.dieta===v} onClick={()=>setEdit({...edit,dieta:v})}>{v}</Chip>)}</div>
+          <div className="flex gap-2 flex-wrap">{DIETE.map(v=><Chip key={v} on={edit.dieta===v} onClick={()=>setEdit({...edit,dieta:v})}>{v}</Chip>)}</div>
         </div>
-        <div>
-          <div className="text-[11px] font-extrabold text-stone-400 uppercase tracking-wide mb-1.5">Fabbisogno calorico giornaliero</div>
-          <div className="flex gap-1.5 flex-wrap mb-2">
-            <Chip on={!edit.kcal} onClick={()=>setEdit({...edit,kcal:null})}>Auto</Chip>
-            {[1500,1800,2000,2200,2500,3000].map(k=><Chip key={k} on={edit.kcal===k} onClick={()=>setEdit({...edit,kcal:k})}>{k}</Chip>)}
-          </div>
-          {edit.kcal&&<div className="flex items-center gap-3">
-            <button onClick={()=>setEdit({...edit,kcal:Math.max(800,edit.kcal-50)})} className="w-9 h-9 rounded-xl bg-stone-100 font-extrabold text-stone-600">−</button>
-            <span className="font-extrabold text-[15px] w-24 text-center">{edit.kcal} kcal</span>
-            <button onClick={()=>setEdit({...edit,kcal:Math.min(4500,edit.kcal+50)})} className="w-9 h-9 rounded-xl bg-[#2E5941]/10 font-extrabold text-[#2E5941]">+</button>
-            <span className="text-[10px] text-stone-400 font-semibold flex-1">porzioni {Math.round(edit.kcal/20)}% dello standard</span>
-          </div>}
-          <p className="text-[10px] text-stone-400 mt-1.5 font-semibold">Con "Auto" uso età e appetito. Il target scala porzioni e spesa: 1500 kcal = porzioni al 75%.</p>
-        </div>
-        <button onClick={()=>setEdit({...edit,dietaIndividuale:!edit.dietaIndividuale})}
-          className={"w-full flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition "+(edit.dietaIndividuale?"border-[#D96C47] bg-[#D96C47]/5":"border-stone-200")}>
-          <span className={"w-10 h-6 rounded-full relative transition "+(edit.dietaIndividuale?"bg-[#D96C47]":"bg-stone-200")}>
-            <span className={"absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all "+(edit.dietaIndividuale?"left-[18px]":"left-0.5")}/>
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-extrabold">Dieta individuale</span>
-            <span className="block text-[10px] text-stone-400 font-semibold">Nello step Piano comparirà la sua scheda personale, accanto a "Famiglia": lì compone la sua settimana, piatto per piatto. La spesa somma tutto.</span>
-          </span>
-        </button>
         <div>
           <div className="text-[11px] font-extrabold text-stone-400 uppercase tracking-wide mb-1.5">Allergie / intolleranze</div>
           <div className="flex gap-2 flex-wrap">{ALLERGIE.map(a=><Chip key={a} on={edit.allergie.includes(a)} onClick={()=>setEdit({...edit,allergie:edit.allergie.includes(a)?edit.allergie.filter(x=>x!==a):[...edit.allergie,a]})}>{a}</Chip>)}</div>
         </div>
         <div>
-          <div className="text-[11px] font-extrabold text-stone-400 uppercase tracking-wide mb-1.5">Non mangia / non gradisce</div>
+          <div className="text-[11px] font-extrabold text-stone-400 uppercase tracking-wide mb-1.5">Non mangia / non gradisce / altre intolleranze o allergie</div>
           <div className="flex gap-2 flex-wrap mb-2">
             {edit.nonGraditi.map(t=><span key={t} className="flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-800 rounded-full pl-2.5 pr-1 py-1">{t}
               <button onClick={()=>setEdit({...edit,nonGraditi:edit.nonGraditi.filter(x=>x!==t)})} className="w-4 h-4 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center"><I n="x" s={9} w={3}/></button></span>)}
@@ -1126,23 +1104,35 @@ function CreaRicetta({onClose,onSalva}){
 }
 
 /* ================= STEP 2 · RICETTE ================= */
+const MACRO_CAT=["Tutte","Italiane","Dal mondo","Healthy"];
+function _cuc(r){ return r.cucina||"Italiana"; }
+function _tag(r,t){ return (r.tags||[]).indexOf(t)>=0; }
+function _isHealthy(r){ return _cuc(r)==="Healthy"||_tag(r,"healthy"); }
+const SUB_CAT={
+  "Italiane":[["Classiche",r=>_tag(r,"classica")||(!_tag(r,"senza-fornelli")&&!_tag(r,"estiva"))],["Senza fornelli",r=>_tag(r,"senza-fornelli")],["Estive",r=>_tag(r,"estiva")],["Invernali",r=>_tag(r,"inverno")],["Salva-spreco",r=>_tag(r,"salva-spreco")]],
+  "Dal mondo":[["Asiatiche",r=>_cuc(r)==="Asiatica"],["Cinesi",r=>_cuc(r)==="Cinese"||r.paese==="cina"],["Giapponesi",r=>_cuc(r)==="Giapponese"||r.paese==="giappone"],["Thai",r=>r.paese==="thailandia"],["Coreane",r=>r.paese==="corea"],["Indiane",r=>_cuc(r)==="Indiana"],["Messicane",r=>_cuc(r)==="Messicana"],["Mediorientali",r=>_cuc(r)==="Mediorientale"],["Mediterranee",r=>_cuc(r)==="Mediterranea"],["Americane",r=>_cuc(r)==="Americana"],["Francesi",r=>_cuc(r)==="Francese"],["Spagnole",r=>_cuc(r)==="Spagnola"]],
+  "Healthy":[["Bowl & proteiche",r=>_tag(r,"bowl")||_tag(r,"proteica")],["Leggere / Veg",r=>_tag(r,"vegetariana")||isVeg(r)],["Internazionali",r=>_tag(r,"internazionale")||_cuc(r)!=="Italiana"],["Comfort sano",r=>_tag(r,"comfort")]]
+};
+function macroMatch(r,m){ if(m==="Tutte")return true; if(m==="Italiane")return _cuc(r)==="Italiana"; if(m==="Healthy")return _isHealthy(r); if(m==="Dal mondo")return _cuc(r)!=="Italiana"&&!_isHealthy(r); return true; }
+function subMatch(r,m,s){ if(!s)return true; var arr=SUB_CAT[m]||[]; var f=arr.find(x=>x[0]===s); return !f||f[1](r); }
 function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser}){
   const [filtro,setFiltro]=useState("Tutte");
   const [cerca,setCerca]=useState("");
-  const [soloVeg,setSoloVeg]=useState(false);
+  const [vegF,setVegF]=useState("Tutte");
+  const [macro,setMacro]=useState("Tutte");
+  const [sub,setSub]=useState(null);
   const [mostraImport,setMostraImport]=useState(false);
   const [mostraCrea,setMostraCrea]=useState(false);
   const [dettaglio,setDettaglio]=useState(null);
   function toggle(id){ setLikes(likes.includes(id)?likes.filter(x=>x!==id):[...likes,id]); }
   function elimina(id){ setRicetteUser(ricetteUser.filter(r=>r.id!==id)); setLikes(likes.filter(x=>x!==id)); }
-  const [cucina,setCucina]=useState("Tutte");
   const cucine=useMemo(()=>["Tutte",...new Set(RICETTE.map(r=>r.cucina||"Italiana"))],[ricetteUser]);
   const q=cerca.trim().toLowerCase();
   const ordTipo={Colazione:0,Pranzo:1,Cena:2,Snack:3};
   const vis=RICETTE.filter(r=>
-    (filtro==="Tutte"||r.tipo===filtro||(filtro==="Snack"&&r.tipo==="Snack"))&&
-    (cucina==="Tutte"||(r.cucina||"Italiana")===cucina)&&
-    (!soloVeg||isVeg(r))&&
+    (filtro==="Tutte"||r.tipo===filtro)&&
+    (vegF==="Tutte"||(vegF==="Vegetariane"&&isVeg(r))||(vegF==="Vegane"&&isVegan(r)))&&
+    macroMatch(r,macro)&&subMatch(r,macro,sub)&&
     (!q||r.nome.toLowerCase().includes(q)||r.ingredienti.some(i=>i.nome.toLowerCase().includes(q)))
   ).sort((a,b)=>(ordTipo[a.tipo]??9)-(ordTipo[b.tipo]??9)||a.nome.localeCompare(b.nome));
   return <Sez title="Le vostre ricette" sub={RICETTE.length+" ricette, "+(cucine.length-1)+" cucine dal mondo. Tocca il cuore per i preferiti."}>
@@ -1158,13 +1148,18 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
     {mostraImport&&<div className="no-print mb-3"><ImportRicetta onSalva={r=>{setRicetteUser([...ricetteUser,r]);setMostraImport(false);}}/><button onClick={()=>setMostraImport(false)} className="text-[10px] font-bold text-stone-300 hover:text-stone-500 mt-1">chiudi</button></div>}
     <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
       {["Tutte","Colazione","Pranzo","Cena","Snack"].map(f=><Chip key={f} on={filtro===f} onClick={()=>setFiltro(f)}>{f}</Chip>)}
-      <span className="w-px h-5 bg-stone-200 self-center"/>
-      <button onClick={()=>setSoloVeg(!soloVeg)} className={"px-3.5 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 "+(soloVeg?"bg-green-600 border-green-600 text-white shadow-sm":"bg-white border-green-300 text-green-700 hover:border-green-500")}>
-        <I n="foglia" s={12}/>Solo Veg</button>
     </div>
-    <div className="flex gap-1.5 mb-4 no-print overflow-x-auto pb-1" style={{scrollbarWidth:"none"}}>
-      {cucine.map(c=><button key={c} onClick={()=>setCucina(c)} className={"shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition "+(cucina===c?"bg-[#D96C47] text-white":"bg-white text-stone-400 border border-stone-200")}>{c}</button>)}
+    <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
+      {["Tutte","Vegetariane","Vegane"].map(v=><button key={v} onClick={()=>setVegF(v)} className={"px-3.5 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 "+(vegF===v?"bg-green-600 border-green-600 text-white shadow-sm":"bg-white border-green-300 text-green-700 hover:border-green-500")}>{v!=="Tutte"&&<I n="foglia" s={12}/>}{v}</button>)}
     </div>
+    <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
+      {MACRO_CAT.map(m=><button key={m} onClick={()=>{setMacro(m);setSub(null);}} className={"px-3.5 py-1.5 rounded-full text-xs font-extrabold border transition "+(macro===m?"bg-[#D96C47] border-[#D96C47] text-white shadow-sm":"bg-white border-stone-200 text-stone-500 hover:border-stone-300")}>{m}</button>)}
+    </div>
+    {macro!=="Tutte"&&SUB_CAT[macro]&&<div className="flex gap-1.5 mb-4 no-print overflow-x-auto pb-1" style={{scrollbarWidth:"none"}}>
+      <button onClick={()=>setSub(null)} className={"shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition "+(sub===null?"bg-[#2E5941] text-white":"bg-white text-stone-400 border border-stone-200")}>Tutte</button>
+      {SUB_CAT[macro].map(x=><button key={x[0]} onClick={()=>setSub(x[0])} className={"shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition "+(sub===x[0]?"bg-[#2E5941] text-white":"bg-white text-stone-400 border border-stone-200")}>{x[0]}</button>)}
+    </div>}
+    {macro==="Tutte"&&<div className="mb-4"/>}
     {vis.length===0&&<div className="card p-8 text-center text-stone-400 text-sm font-semibold">Nessuna ricetta trovata per "{cerca}".</div>}
     <div className="space-y-2.5">
       {vis.map(r=>{
@@ -2016,7 +2011,7 @@ function App(){
       {step==="piano"&&<StepPiano persone={persone} likes={likes} planner={planner} setPlanner={setPlanner} varianti={varianti} setVarianti={setVarianti} dispensa={dispensa} avanti={()=>setStep("spesa")}/>}
       {step==="spesa"&&<StepSpesa items={items} dispensa={dispensa} setDispensa={setDispensa} checked={checked} setChecked={setChecked} avanti={()=>setStep("negozi")} nuovaSettimana={nuovaSettimana}/>}
       {step==="negozi"&&<StepNegozi items={items}/>}
-      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v2-DB · {RICETTE.length} ricette</div>
+      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v4-DB · {RICETTE.length} ricette</div>
     </main>
 
     {/* NAV FLOTTANTE */}
@@ -2064,8 +2059,8 @@ function applicaCatalogo(list){
   return add;
 }
 async function caricaCatalogoDB(){
-  ING["Brodo vegetale"]=ING["Brodo vegetale"]||["Dispensa",0.9,1000,"ml"];
-  KCAL["Brodo vegetale"]=KCAL["Brodo vegetale"]||4;
+  var _newI={"Brodo vegetale":["Dispensa",0.9,1000,"ml",4],"Patata dolce":["Frutta e Verdura",2.5,1000,"g",86],"Salsa teriyaki":["Dispensa",3.5,250,"ml",130],"Salsa sriracha":["Dispensa",3.0,200,"ml",90],"Burro di arachidi":["Dispensa",4.0,350,"g",590],"Zenzero":["Frutta e Verdura",6.0,100,"g",80]};
+  Object.keys(_newI).forEach(function(k){ if(!ING[k])ING[k]=_newI[k].slice(0,4); if(KCAL[k]==null)KCAL[k]=_newI[k][4]; });
   const [ric,ings,passi,tags]=await Promise.all([
     supaGet("ricette?select=*&limit=5000"),
     supaGet("ricetta_ingredienti?select=*&limit=50000"),
