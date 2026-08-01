@@ -377,6 +377,11 @@ function imgAI(r,w=640,h=400,fast){
 // Foto ospitata su Supabase Storage (statica, istantanea). Se manca, l'app ripiega su imgAI.
 function imgHost(r){ var s=window.FF_SUPA; return (s&&r&&r.id)? s.url+"/storage/v1/object/public/ricette/"+r.id+".jpg" : null; }
 function imgErr(e,r){ var t=e.target; if(t.dataset.fb){ t.style.display="none"; return; } t.dataset.fb="1"; t.src=imgAI(r); }
+// Emblema di provenienza (bandierina) al posto del testo della cucina
+const _FLAGP={italia:"🇮🇹",francia:"🇫🇷",usa:"🇺🇸",messico:"🇲🇽",spagna:"🇪🇸",india:"🇮🇳",cina:"🇨🇳",giappone:"🇯🇵",thailandia:"🇹🇭",corea:"🇰🇷",vietnam:"🇻🇳",grecia:"🇬🇷",libano:"🇱🇧","medio-oriente":"🧆",nordafrica:"🇲🇦",hawaii:"🌺"};
+const _FLAGC={Italiana:"🇮🇹",Francese:"🇫🇷",Americana:"🇺🇸",Messicana:"🇲🇽",Spagnola:"🇪🇸",Indiana:"🇮🇳",Asiatica:"🥢",Mediterranea:"🫒",Mediorientale:"🧆",Healthy:"🥗"};
+function bandieraDi(r){ return (r.paese&&_FLAGP[r.paese])||_FLAGC[r.cucina||"Italiana"]||"🍽️"; }
+function Bandiera({r}){ return <span title={r.cucina||"Italiana"} aria-label={r.cucina||"Italiana"} className="leading-none" style={{fontSize:"12px"}}>{bandieraDi(r)}</span>; }
 // Pre-carica in background le miniature (bassa concorrenza) così "scaldano" la cache del server
 let _preloadFatto=false;
 function preloadImmagini(lista){
@@ -1183,7 +1188,7 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
               <span className="flex items-center gap-1"><I n={r.tipo==="Snack"?"spuntino":PASTO_ICON[r.tipo]} s={11}/>{r.tipo==="Snack"?"Spuntino/Merenda":r.tipo}</span>
               <span className="flex items-center gap-1"><I n="orologio" s={11}/>{r.tempo}′</span>
               <span className="text-stone-400">{kcalRicetta(r)} kcal</span>
-              {(r.cucina&&r.cucina!=="Italiana")&&<span className="text-[#D96C47] font-extrabold">{r.cucina}</span>}
+              <Bandiera r={r}/>
               {isVeg(r)&&<span className="text-green-600 flex items-center gap-0.5"><I n="foglia" s={11}/></span>}
               {r.recupero&&<span className="text-[#2E5941] flex items-center gap-0.5 font-extrabold"><I n="ricicla" s={11}/>riusa avanzi</span>}
               {r.fonte&&<span className="text-[#E5A33D] font-extrabold truncate max-w-[110px]">{r.fonte}</span>}
@@ -1220,7 +1225,7 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
             <span className="flex items-center gap-1"><I n={r.tipo==="Snack"?"spuntino":PASTO_ICON[r.tipo]} s={12}/>{r.tipo==="Snack"?"Spuntino/Merenda":r.tipo}</span>
             <span className="flex items-center gap-1"><I n="orologio" s={12}/>{r.tempo} min</span>
             <span>{kcalRicetta(r)} kcal/porzione</span>
-            {(r.cucina&&r.cucina!=="Italiana")&&<span className="text-[#D96C47]">{r.cucina}</span>}
+            <Bandiera r={r}/>
             {isVeg(r)&&<span className="text-green-600 flex items-center gap-0.5"><I n="foglia" s={12}/>veg</span>}
             {r.fonte&&<span className="text-[#E5A33D]">{r.fonte}</span>}
           </div>
@@ -1570,7 +1575,7 @@ function StepPiano({persone,likes,planner,setPlanner,varianti,setVarianti,dispen
             <span className="flex items-center gap-1"><I n={r.tipo==="Snack"?"spuntino":PASTO_ICON[r.tipo]} s={12}/>{r.tipo==="Snack"?"Spuntino/Merenda":r.tipo}</span>
             <span className="flex items-center gap-1"><I n="orologio" s={12}/>{r.tempo} min</span>
             <span>{kcalRicetta(r)} kcal/porzione</span>
-            {(r.cucina&&r.cucina!=="Italiana")&&<span className="text-[#D96C47]">{r.cucina}</span>}
+            <Bandiera r={r}/>
             {isVeg(r)&&<span className="text-green-600 flex items-center gap-0.5"><I n="foglia" s={12}/>veg</span>}
           </div>
           {alg.length>0&&<div className="flex gap-1 flex-wrap mt-2">{alg.map(a=><Warn key={a} tipo="allergia">{a}</Warn>)}</div>}
@@ -1831,7 +1836,7 @@ function StepNegozi({items}){
 
   if(!daComprare.length) return <Sez title="Dove conviene"><div className="card p-10 text-center text-stone-400 flex flex-col items-center gap-3"><I n="negozi" s={36} w={1.4}/>Prima la spesa, poi il supermercato.</div></Sez>;
 
-  return <Sez title="Dove conviene" sub="Trova i supermercati della tua zona, confronta distanza e prezzo stimato, poi ordina online.">
+  return <Sez title="Dove conviene" sub="Trova i supermercati della tua zona, confronta distanza e prezzo stimato, e porta con te la lista della spesa.">
 
     {/* RICERCA ZONA */}
     <div className="card p-4 mb-5 no-print">
@@ -1898,51 +1903,12 @@ function StepNegozi({items}){
       <button onClick={ripristinaNascosti} className="text-[11px] font-bold text-stone-400 hover:text-[#2E5941]">{nNascosti} {nNascosti===1?"negozio nascosto":"negozi nascosti"} · ripristina</button>
     </div>}
 
-    {/* ORDINA ONLINE */}
-    <h3 className="display text-lg font-bold mb-1">Spesa a domicilio</h3>
-    <div className="rounded-2xl bg-amber-50 border border-amber-200 px-3.5 py-2.5 text-[11px] font-semibold text-amber-800 mb-3 leading-relaxed">
-      <b>Come funziona.</b> I siti dei supermercati <u>non</u> accettano una lista incollata in blocco: i prodotti vanno aggiunti uno a uno cercandoli sul loro sito. Perciò copia la lista qui sotto e <b>tienila aperta a fianco</b> come promemoria mentre riempi il carrello. L'aggiunta automatica richiederebbe un accordo diretto col supermercato.
-    </div>
-    <button onClick={copiaLista} className={"w-full mb-2.5 rounded-2xl py-3 font-extrabold text-sm flex items-center justify-center gap-2 transition "+(copiato?"bg-[#2E5941] text-white":"bg-[#2E5941]/10 text-[#2E5941] hover:bg-[#2E5941]/15")}>
+    {/* LISTA DELLA SPESA (spesa online disattivata: si riattiva quando ci saranno integrazioni/accordi) */}
+    <h3 className="display text-lg font-bold mb-1">La lista della spesa</h3>
+    <p className="text-[11px] text-stone-400 font-semibold mb-3">Copiala e portala con te: hai tutto quello che manca in dispensa, con le quantità.</p>
+    <button onClick={copiaLista} className={"w-full mb-2 rounded-2xl py-3 font-extrabold text-sm flex items-center justify-center gap-2 transition "+(copiato?"bg-[#2E5941] text-white":"bg-[#2E5941]/10 text-[#2E5941] hover:bg-[#2E5941]/15")}>
       <I n={copiato?"check":"carta"} s={17} w={2.2}/>{copiato?"Lista copiata negli appunti!":"Copia la lista della spesa ("+daComprare.length+" voci)"}
     </button>
-    <button onClick={()=>setMostraRicerca(!mostraRicerca)} className="w-full mb-4 rounded-2xl py-2.5 font-bold text-[13px] flex items-center justify-center gap-2 bg-stone-100 text-stone-600 hover:bg-stone-200 transition">
-      <I n="lente" s={15}/>{mostraRicerca?"Nascondi ricerca prodotto per prodotto":"Aggiungi al carrello prodotto per prodotto (senza digitare)"}
-    </button>
-    {mostraRicerca&&<div className="mb-4 pop">
-      <p className="text-[11px] text-stone-500 font-semibold mb-2">Tocca un prodotto: si apre la ricerca già compilata sul negozio, tu premi solo <b>“aggiungi”</b>. Niente da scrivere.</p>
-      <div className="flex gap-1.5 mb-2.5 overflow-x-auto pb-1" style={{scrollbarWidth:"none"}}>
-        {[{k:"amazon",l:"Amazon"},{k:"everli",l:"Everli"},{k:"carrefour",l:"Carrefour"},{k:"google",l:"Cerca sul web"}].map(o=>
-          <button key={o.k} onClick={()=>setNegozioRicerca(o.k)} className={"shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition "+(negozioRicerca===o.k?"bg-[#2E5941] text-white":"bg-white text-stone-400 border border-stone-200")}>{o.l}</button>)}
-      </div>
-      <div className="card divide-y divide-stone-50 overflow-hidden">
-        {daComprare.map(i=>(
-          <a key={i.nome} href={linkRicerca(negozioRicerca,i.nome)} target="_blank" rel="noopener" className="px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition">
-            <span className="text-stone-300 shrink-0"><I n="lente" s={14}/></span>
-            <span className="flex-1 text-[13px] font-bold text-stone-700 truncate">{i.nome}</span>
-            <span className="text-[10px] text-stone-400 font-semibold">{fmtQ(i.daCoprire,i.unit)}</span>
-            <span className="text-[#2E5941] shrink-0"><I n="freccia" s={15}/></span>
-          </a>
-        ))}
-      </div>
-      <p className="text-[10px] text-stone-400 font-semibold mt-2">Amazon apre direttamente i risultati. Everli/Carrefour possono chiederti prima CAP e negozio: è un limite dei loro siti, non c'è modo di aggirarlo senza un loro accordo.</p>
-    </div>}
-    <div className="space-y-2.5">
-      {ONLINE.map(s=>(
-        <a key={s.id} href={s.url} target="_blank" rel="noopener" className="card p-4 flex items-center gap-3.5 hover:ring-2 hover:ring-[#2E5941]/30 transition">
-          <div className="w-11 h-11 rounded-2xl bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><I n={s.icon} s={22}/></div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-extrabold text-[14px]">{s.nome}</span>
-              {s.multi&&<span className="text-[8.5px] font-extrabold bg-[#D96C47]/15 text-[#D96C47] rounded-full px-2 py-0.5">PIÙ INSEGNE</span>}
-            </div>
-            <div className="flex items-start gap-1 text-[11px] text-stone-400 font-semibold"><I n="camion" s={11} cls="mt-0.5 shrink-0"/><span>{s.nota} · {s.tempo}</span></div>
-          </div>
-          <span className="text-[#2E5941] shrink-0"><I n="freccia" s={18}/></span>
-        </a>
-      ))}
-    </div>
-    <p className="text-[10px] text-stone-400 font-semibold mt-3">La disponibilità di ogni servizio dipende dalla tua zona di consegna. Manca il tuo supermercato di fiducia? Molti hanno una spesa online sul proprio sito: cerca "[nome] spesa online".</p>
   </Sez>;
 }
 
@@ -2019,7 +1985,7 @@ function App(){
       {step==="piano"&&<StepPiano persone={persone} likes={likes} planner={planner} setPlanner={setPlanner} varianti={varianti} setVarianti={setVarianti} dispensa={dispensa} avanti={()=>setStep("spesa")}/>}
       {step==="spesa"&&<StepSpesa items={items} dispensa={dispensa} setDispensa={setDispensa} checked={checked} setChecked={setChecked} avanti={()=>setStep("negozi")} nuovaSettimana={nuovaSettimana}/>}
       {step==="negozi"&&<StepNegozi items={items}/>}
-      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v9-DB · {RICETTE.length} ricette</div>
+      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v11-DB · {RICETTE.length} ricette</div>
     </main>
 
     {/* NAV FLOTTANTE */}
