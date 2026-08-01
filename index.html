@@ -1124,6 +1124,7 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
   const [vegF,setVegF]=useState("Tutte");
   const [macro,setMacro]=useState("Tutte");
   const [sub,setSub]=useState(null);
+  const [dolceSal,setDolceSal]=useState("Tutte");
   const [mostraImport,setMostraImport]=useState(false);
   const [mostraCrea,setMostraCrea]=useState(false);
   const [dettaglio,setDettaglio]=useState(null);
@@ -1135,6 +1136,7 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
   const vis=RICETTE.filter(r=>
     (filtro==="Tutte"||r.tipo===filtro)&&
     (vegF==="Tutte"||(vegF==="Vegetariane"&&isVeg(r))||(vegF==="Vegane"&&isVegan(r)))&&
+    ((filtro!=="Colazione"&&filtro!=="Snack")||dolceSal==="Tutte"||(dolceSal==="Dolci"&&_tag(r,"dolce"))||(dolceSal==="Salate"&&_tag(r,"salato")))&&
     macroMatch(r,macro)&&subMatch(r,macro,sub)&&
     (!q||r.nome.toLowerCase().includes(q)||r.ingredienti.some(i=>i.nome.toLowerCase().includes(q)))
   ).sort((a,b)=>(ordTipo[a.tipo]??9)-(ordTipo[b.tipo]??9)||a.nome.localeCompare(b.nome));
@@ -1150,8 +1152,11 @@ function StepRicette({persone,likes,setLikes,avanti,ricetteUser,setRicetteUser})
     </div>
     {mostraImport&&<div className="no-print mb-3"><ImportRicetta onSalva={r=>{setRicetteUser([...ricetteUser,r]);setMostraImport(false);}}/><button onClick={()=>setMostraImport(false)} className="text-[10px] font-bold text-stone-300 hover:text-stone-500 mt-1">chiudi</button></div>}
     <div className="flex gap-1.5 mb-2 no-print flex-nowrap items-center overflow-x-auto" style={{scrollbarWidth:"none"}}>
-      {["Tutte","Colazione","Pranzo","Cena","Snack"].map(f=><button key={f} onClick={()=>setFiltro(f)} className={"shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition "+(filtro===f?"bg-[#2E5941] border-[#2E5941] text-white shadow-sm":"bg-white border-stone-200 text-stone-500 hover:border-stone-300")}>{f}</button>)}
+      {["Tutte","Colazione","Pranzo","Cena","Snack"].map(f=><button key={f} onClick={()=>{setFiltro(f);setDolceSal("Tutte");}} className={"shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition "+(filtro===f?"bg-[#2E5941] border-[#2E5941] text-white shadow-sm":"bg-white border-stone-200 text-stone-500 hover:border-stone-300")}>{f}</button>)}
     </div>
+    {(filtro==="Colazione"||filtro==="Snack")&&<div className="flex gap-1.5 mb-2 no-print flex-wrap items-center">
+      {["Tutte","Dolci","Salate"].map(v=><button key={v} onClick={()=>setDolceSal(v)} className={"px-3.5 py-1.5 rounded-full text-xs font-bold border transition "+(dolceSal===v?"bg-[#E5A33D] border-[#E5A33D] text-white shadow-sm":"bg-white border-stone-200 text-stone-500 hover:border-stone-300")}>{v}</button>)}
+    </div>}
     <div className="flex gap-2 mb-2 no-print flex-wrap items-center">
       {["Tutte","Vegetariane","Vegane"].map(v=><button key={v} onClick={()=>setVegF(v)} className={"px-3.5 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 "+(vegF===v?"bg-green-600 border-green-600 text-white shadow-sm":"bg-white border-green-300 text-green-700 hover:border-green-500")}>{v!=="Tutte"&&<I n="foglia" s={12}/>}{v}</button>)}
     </div>
@@ -2014,7 +2019,7 @@ function App(){
       {step==="piano"&&<StepPiano persone={persone} likes={likes} planner={planner} setPlanner={setPlanner} varianti={varianti} setVarianti={setVarianti} dispensa={dispensa} avanti={()=>setStep("spesa")}/>}
       {step==="spesa"&&<StepSpesa items={items} dispensa={dispensa} setDispensa={setDispensa} checked={checked} setChecked={setChecked} avanti={()=>setStep("negozi")} nuovaSettimana={nuovaSettimana}/>}
       {step==="negozi"&&<StepNegozi items={items}/>}
-      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v7-DB · {RICETTE.length} ricette</div>
+      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v8-DB · {RICETTE.length} ricette</div>
     </main>
 
     {/* NAV FLOTTANTE */}
