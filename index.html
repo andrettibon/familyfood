@@ -369,10 +369,11 @@ const PROC={};
 function procDi(r){ return r.proc||PROC2[r.id]||PROC[r.id]||null; }
 /* immagine AI del piatto (generata al volo, gratuita, con seed stabile) */
 function seedDi(s){ let h=0; for(const c of String(s)) h=(h*31+c.charCodeAt(0))>>>0; return h%99991; }
+const _CUCEN={Italiana:"italian",Francese:"french",Americana:"american",Messicana:"mexican",Spagnola:"spanish",Indiana:"indian",Asiatica:"asian",Mediterranea:"mediterranean",Mediorientale:"middle eastern",Healthy:"healthy"};
 function imgAI(r,w=640,h=400,fast){
-  const cucina=r.cucina&&r.cucina!=="Italiana"?("cucina "+r.cucina.toLowerCase()):"cucina italiana";
-  const prompt="fotografia food professionale di "+r.nome+", "+cucina+", piatto servito, luce naturale, realistico, appetitoso, alta qualità";
-  return "https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width="+w+"&height="+h+"&seed="+seedDi(r.id)+"&nologo=true&nofeed=true"+(fast?"&model=turbo":"");
+  const cuc=(_CUCEN[r.cucina]||"italian")+" cuisine";
+  const prompt="professional food photography, close-up top view of "+r.nome+", "+cuc+", a single plated dish on a table, fresh real ingredients, natural soft light, appetizing, ultra realistic, high detail, food only, no people, no person, no hands, no text";
+  return "https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width="+w+"&height="+h+"&seed="+seedDi(r.id)+"&nologo=true&nofeed=true&model="+(fast?"turbo":"flux");
 }
 // Foto ospitata su Supabase Storage (statica, istantanea). Se manca, l'app ripiega su imgAI.
 function imgHost(r){ var s=window.FF_SUPA; return (s&&r&&r.id)? s.url+"/storage/v1/object/public/ricette/"+r.id+".jpg" : null; }
@@ -1985,7 +1986,7 @@ function App(){
       {step==="piano"&&<StepPiano persone={persone} likes={likes} planner={planner} setPlanner={setPlanner} varianti={varianti} setVarianti={setVarianti} dispensa={dispensa} avanti={()=>setStep("spesa")}/>}
       {step==="spesa"&&<StepSpesa items={items} dispensa={dispensa} setDispensa={setDispensa} checked={checked} setChecked={setChecked} avanti={()=>setStep("negozi")} nuovaSettimana={nuovaSettimana}/>}
       {step==="negozi"&&<StepNegozi items={items}/>}
-      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v11-DB · {RICETTE.length} ricette</div>
+      <div className="text-center text-[10px] tracking-wide text-stone-300 pt-8 pb-24 select-none">FamilyFood · v12-DB · {RICETTE.length} ricette</div>
     </main>
 
     {/* NAV FLOTTANTE */}
